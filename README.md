@@ -3,6 +3,12 @@ ServeCS
 
 Windows Service Template, easy to debug
 
+## V 0.5
+
+It is now a Windows Application, so the app can handle Windows Messages. The service has just to implement ```Servo.IService``` and the ```Main``` method would just call ```new XServiceService().Run();``` when developing, and ```new XServiceService().Run(true);``` when we release.
+
+For installing the project template run _.VSIX_ inside [this](https://github.com/dc0d/Servo/blob/master/Build-Release/V-0.5/Servo.CS.VSIX.zip) release build.
+
 ## V 0.1
 
 Template base projects created; a single file _Servo.cs_, which is the Windows Service scaffold.
