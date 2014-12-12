@@ -1,7 +1,7 @@
-ServeCS
-=======
+Servo
+=====
 
-Windows Service Template, easy to debug
+A Project Template for developing Windows Service easily.
 
 ## V 0.5
 
