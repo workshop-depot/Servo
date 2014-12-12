@@ -7,7 +7,6 @@ using System.Configuration;
 using System.Configuration.Install;
 using System.Linq;
 using System.ServiceProcess;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -222,12 +221,24 @@ namespace Servo
             InitializeComponent();
 
             _svc = svc;
-            Task.Factory.StartNew(() => _svc.OnStart(Environment.GetCommandLineArgs()), TaskCreationOptions.LongRunning);
+            Start();
         }
 
-        private void stopBtn_Click(object sender, EventArgs e)
+        private async void stopBtn_Click(object sender, EventArgs e)
         {
-            Task.Factory.StartNew(() => _svc.OnStop(), TaskCreationOptions.LongRunning);
+            await Stop();
+        }
+
+        async void Start()
+        {
+            stopBtn.Enabled = false;
+            await Task.Factory.StartNew(() => _svc.OnStart(Environment.GetCommandLineArgs()), TaskCreationOptions.LongRunning);
+            stopBtn.Enabled = true;
+        }
+
+        async Task Stop()
+        {
+            await Task.Factory.StartNew(() => _svc.OnStop(), TaskCreationOptions.LongRunning);
             this.Close();
         }
 

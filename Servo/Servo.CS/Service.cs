@@ -1,22 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NLog;
 using Servo;
-using NLog;
+using System;
 
-namespace ServeCS
+namespace XService
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            new SampleService().Run();
-        }
-    }
-
-    class SampleService : IService
+    class XServiceService : IService
     {
         #region IService Members
         public void OnContinue()
@@ -51,12 +39,12 @@ namespace ServeCS
 
         public void OnStart(string[] args)
         {
-            ClassLogger.Info("Service Started");
+            ClassLogger.Info("Service Started - XService");
         }
 
         public void OnStop()
         {
-            ClassLogger.Info("Service Stopped");
+            ClassLogger.Info("Service Stopped - XService");
         }
         #endregion
 

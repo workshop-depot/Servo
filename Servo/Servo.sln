@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Origins", "Origins", "{C121600A-3205-49A2-B8F8-25202B126C02}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{731A7FF9-C39D-4F23-97BD-5BACB0AB22D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servo.CS", "Servo.CS\Servo.CS.csproj", "{A5703C0A-12AC-4692-81E0-5B210B8D3BC4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A5703C0A-12AC-4692-81E0-5B210B8D3BC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5703C0A-12AC-4692-81E0-5B210B8D3BC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5703C0A-12AC-4692-81E0-5B210B8D3BC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5703C0A-12AC-4692-81E0-5B210B8D3BC4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A5703C0A-12AC-4692-81E0-5B210B8D3BC4} = {C121600A-3205-49A2-B8F8-25202B126C02}
+	EndGlobalSection
+EndGlobal
