@@ -50,7 +50,7 @@ namespace Servo
                 if (string.IsNullOrWhiteSpace(val)) throw new SettingsPropertyNotFoundException("app setting " + key + " is not set");
 
                 ServiceStartMode mode;
-                if (!System.Enum.TryParse(val, out mode)) throw new SettingsPropertyNotFoundException("app setting " + key + " has a wrong value"); ;
+                if (!System.Enum.TryParse(val, out mode)) throw new SettingsPropertyNotFoundException("app setting " + key + " has a wrong value");
 
                 return mode;
             }
@@ -76,7 +76,7 @@ namespace Servo
                 var val = ReadConf(key);
                 if (string.IsNullOrWhiteSpace(val)) return new string[] { };
 
-                return val.Split(',');
+                return val.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             }
         }
         public bool DelayedAutoStart
@@ -97,7 +97,7 @@ namespace Servo
 
         public override string ToString()
         {
-            var depended = string.Join(", ", ServicesDependedOn ?? new string[] { });
+            var depended = string.Join(", ", ServicesDependedOn);
             return new { ServiceName, DisplayName, ServiceStartMode, Description, ServicesDependedOn = depended, DelayedAutoStart }.ToString();
         }
 
@@ -314,20 +314,16 @@ namespace Servo
         {
             try
             {
-                ClassLogger.Info("Starting service...");
+                ClassLogger.Info("Starting Service...");
                 const int timeout = 7 * 60;
                 _c.Start();
 
                 const ServiceControllerStatus targetStatus = ServiceControllerStatus.Running;
                 _c.WaitForStatus(targetStatus, TimeSpan.FromSeconds(timeout));
-
-                ClassLogger.Warn(_c.Status == targetStatus
-                    ? "Started"
-                    : string.Format("Failed, service status is {0}", _c.Status));
             }
             catch (Exception ex)
             {
-                ClassLogger.Error(string.Format("Could not start service. {0}", ex));
+                ClassLogger.Error("Error in starting service: {0}", ex);
             }
         }
 
@@ -335,20 +331,16 @@ namespace Servo
         {
             try
             {
-                ClassLogger.Info("Stopping service...");
+                ClassLogger.Info("Stopping Service...");
                 const int timeout = 7 * 60;
                 _c.Stop();
 
                 const ServiceControllerStatus targetStatus = ServiceControllerStatus.Stopped;
                 _c.WaitForStatus(targetStatus, TimeSpan.FromSeconds(timeout));
-
-                ClassLogger.Warn(_c.Status == targetStatus
-                    ? "Stopped"
-                    : string.Format("Failed, service status is {0}", _c.Status));
             }
             catch (Exception ex)
             {
-                ClassLogger.Error(string.Format("Could not stop service. {0}", ex));
+                ClassLogger.Error("Error in stopping service: {0}", ex);
             }
         }
 
@@ -375,25 +367,18 @@ namespace Servo
 
             try
             {
-                var list = new List<string>();
-                GetServicesDependedOn(list);
-                if (list.Count > 0) serviceInstaller.ServicesDependedOn = list.ToArray();
+                serviceInstaller.ServicesDependedOn = conf.ServicesDependedOn;
             }
             catch (Exception ex) { ClassLogger.Error(ex); }
 
             try
             {
-                var flag = new List<bool>();
-                GetDelayedAutoStart(flag);
-                if (flag.Count > 0) serviceInstaller.DelayedAutoStart = flag.First();
+                serviceInstaller.DelayedAutoStart = conf.DelayedAutoStart;
             }
             catch (Exception ex) { ClassLogger.Error(ex); }
 
             Installers.AddRange(new Installer[] { processInstaller, serviceInstaller });
         }
-
-        partial void GetServicesDependedOn(List<string> list);
-        partial void GetDelayedAutoStart(List<bool> flag);
 
         internal static void Install(bool undo, string[] args)
         {
@@ -404,6 +389,7 @@ namespace Servo
                 {
                     IDictionary state = new Hashtable();
                     assinst.UseNewContext = true;
+
                     try
                     {
                         if (undo)
@@ -582,7 +568,7 @@ namespace Servo
                 else if (flags["u"].IsSupplied() || flags["uninstall"].IsSupplied()) SvcInstaller.Install(true, args);
                 else if (flags["start"].IsSupplied()) new SvcController().Start();
                 else if (flags["stop"].IsSupplied()) new SvcController().Stop();
-                else if (flags["c"].IsSupplied() || flags["console"].IsSupplied()) new InApp(svc).Run();
+                else if (flags["a"].IsSupplied() || flags["app"].IsSupplied()) new InApp(svc).Run();
                 else new InService(svc).Run();
             }
             else
@@ -598,7 +584,7 @@ namespace Servo
             Console.WriteLine("-u or -uninstall     uninstalls this windows service");
             Console.WriteLine("-start               starts this windows service");
             Console.WriteLine("-stop                stops this windows service");
-            Console.WriteLine("-c or -console       runs this windows service as a console application");
+            Console.WriteLine("-a or -app           runs this windows service as an app");
         }
 
         internal static bool IsSupplied(this string arg) { return !string.IsNullOrWhiteSpace(arg); }
