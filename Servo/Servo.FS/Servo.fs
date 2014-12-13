@@ -15,6 +15,11 @@ open System.Windows.Forms
 
 let readConf (key: string) = ConfigurationManager.AppSettings.[key]
 
+let asEnum s :'a option when 'a:enum<'b> =
+    match System.Enum.TryParse s with
+    | true, v -> Some v
+    | _ -> None
+
 type Config() =
     member this.ServiceName with get() = let key = "WinSvc/Conf/ServiceName"
                                          let v = readConf key
@@ -29,11 +34,11 @@ type Config() =
     member this.ServiceStartMode with get() = let key = "WinSvc/Conf/ServiceStartMode"
                                               let v = readConf key
                                               if String.IsNullOrWhiteSpace(v) then raise <| SettingsPropertyNotFoundException("app setting " + key + " is not set")
-
-                                              let ok, mode = System.Enum.TryParse(v)
-                                              if not ok then raise <| SettingsPropertyNotFoundException("app setting " + key + " has a wrong value")
                                               
-                                              enum<ServiceStartMode>(mode)
+                                              let mode = (asEnum v : ServiceStartMode option)
+                                              match mode with
+                                              | Some(m) -> m
+                                              | _ -> raise <| SettingsPropertyNotFoundException("app setting " + key + " has a wrong value")
 
     member this.Description with get() = let key = "WinSvc/Conf/Description"
                                          let v = readConf key
@@ -77,6 +82,19 @@ type IService =
 
 type InService(scaffold: IService) =
     inherit ServiceBase()
+
+    static let ClassLogger = LogManager.GetCurrentClassLogger()
+
+    do
+        let conf = Config()
+        base.ServiceName <- conf.ServiceName
+
+        base.CanHandlePowerEvent <- false
+        base.CanHandleSessionChangeEvent <- false
+        base.CanPauseAndContinue <- false
+        base.CanShutdown <- false
+        base.CanStop <- true
+        base.AutoLog <- true
 
     override this.OnContinue() =
         try
@@ -127,6 +145,7 @@ type InService(scaffold: IService) =
             base.OnStop()
 
     member this.Run() = 
+        ClassLogger.Info("InService")
         ServiceBase.Run(this)
 
 type MainForm(svc: IService) as thisObj =
@@ -208,7 +227,7 @@ type SvcController() =
             let targetStatus = ServiceControllerStatus.Running
             _c.WaitForStatus(targetStatus, TimeSpan.FromSeconds(timeout))
         with ex ->
-            ClassLogger.Error("Error in starting service: {0}", ex)
+            ClassLogger.Error(String.Format("Error in starting service: {0}", ex))
 
     member this.Stop() = 
         try
@@ -223,21 +242,25 @@ type SvcController() =
             ClassLogger.Error("Error in stopping service: {0}", ex)
 
 [<RunInstaller(true)>]
-type public SvcInstaller () =
-    inherit Installer ()
+type public SvcInstaller() as thisObj =
+    inherit Installer()
 
     static let ClassLogger = LogManager.GetCurrentClassLogger()
 
     do
+        ClassLogger.Info("SvcInstaller 1")
+
         let processInstaller = new ServiceProcessInstaller()
+        let serviceInstaller = new ServiceInstaller()
+
         processInstaller.Account <- ServiceAccount.LocalSystem 
 
         let conf = Config()
-        let serviceInstaller = new ServiceInstaller()
         serviceInstaller.ServiceName <- conf.ServiceName    
         serviceInstaller.DisplayName <- conf.DisplayName    
         serviceInstaller.StartType   <- conf.ServiceStartMode 
         serviceInstaller.Description <- conf.Description
+        ClassLogger.Info(conf.ToString())
 
         try
             serviceInstaller.ServicesDependedOn <- conf.ServicesDependedOn
@@ -249,30 +272,41 @@ type public SvcInstaller () =
         with ex ->
             ClassLogger.Error(ex)
 
-        base.Installers.Add(processInstaller) |> ignore
-        base.Installers.Add(serviceInstaller) |> ignore
+        thisObj.Installers.Add(serviceInstaller) |> ignore
+        thisObj.Installers.Add(processInstaller) |> ignore
+
+        ClassLogger.Info("SvcInstaller 2")
         
     static member Install (undo: bool) (args: String[]) = 
         try
             ClassLogger.Info(if undo then "uninstalling" else "installing")
 
-            use assinst = new AssemblyInstaller(typedefof<SvcInstaller>.Assembly, args)
-            let state = new Hashtable() :> IDictionary
+            if undo then
+                ManagedInstallerClass.InstallHelper([| "/u"; System.Reflection.Assembly.GetAssembly(typeof<SvcInstaller>).Location |])
+            else
+                ManagedInstallerClass.InstallHelper([| System.Reflection.Assembly.GetAssembly(typeof<SvcInstaller>).Location |])
+            (*
+            use assinst = new AssemblyInstaller(System.Reflection.Assembly.GetAssembly(typeof<SvcInstaller>), args)
+            let state = new Hashtable() 
             assinst.UseNewContext <- true
 
             try
                 if undo then
                     assinst.Uninstall(state)
+                    ClassLogger.Info("uninstalled")
                 else
-                    assinst.Install(state)
-                    assinst.Commit(state)
+                    assinst.Install(state) 
+                    assinst.Commit(state)  
+                    ClassLogger.Info("installed")
             with _ ->
                 try
                     assinst.Rollback(state)
-                with _ ->
-                    ()
+                    ClassLogger.Info("rolled back")
+                with xo ->
+                    ClassLogger.Error(xo)
 
                 reraise()
+            *)
         with ex ->
             ClassLogger.Error(ex)
 

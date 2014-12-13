@@ -136,6 +136,16 @@ namespace Servo
         public InService(IService scaffold)
         {
             _scaffold = scaffold;
+
+            var conf = new Config();
+            ServiceName = conf.ServiceName;
+
+            CanHandlePowerEvent = false;
+            CanHandleSessionChangeEvent = false;
+            CanPauseAndContinue = false;
+            CanShutdown = false;
+            CanStop = true;
+            AutoLog = true;
         }
 
         protected override void OnContinue()
@@ -377,7 +387,7 @@ namespace Servo
             }
             catch (Exception ex) { ClassLogger.Error(ex); }
 
-            Installers.AddRange(new Installer[] { processInstaller, serviceInstaller });
+            Installers.AddRange(new Installer[] { serviceInstaller, processInstaller });
         }
 
         internal static void Install(bool undo, string[] args)

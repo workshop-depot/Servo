@@ -1,4 +1,4 @@
-﻿module Service
+﻿module XService
 
 open NLog
 open Servo
