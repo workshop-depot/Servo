@@ -20,7 +20,7 @@ namespace Servo
         {
             get
             {
-                const string key = "WinSvc/Conf/ServiceName";
+                const string key = "Servo/Conf/ServiceName";
 
                 var val = ReadConf(key);
                 if (string.IsNullOrWhiteSpace(val)) throw new SettingsPropertyNotFoundException("app setting " + key + " is not set");
@@ -32,7 +32,7 @@ namespace Servo
         {
             get
             {
-                const string key = "WinSvc/Conf/DisplayName";
+                const string key = "Servo/Conf/DisplayName";
 
                 var val = ReadConf(key);
                 if (string.IsNullOrWhiteSpace(val)) throw new SettingsPropertyNotFoundException("app setting " + key + " is not set");
@@ -44,7 +44,7 @@ namespace Servo
         {
             get
             {
-                const string key = "WinSvc/Conf/ServiceStartMode";
+                const string key = "Servo/Conf/ServiceStartMode";
 
                 var val = ReadConf(key);
                 if (string.IsNullOrWhiteSpace(val)) throw new SettingsPropertyNotFoundException("app setting " + key + " is not set");
@@ -59,7 +59,7 @@ namespace Servo
         {
             get
             {
-                const string key = "WinSvc/Conf/Description";
+                const string key = "Servo/Conf/Description";
 
                 var val = ReadConf(key);
                 if (string.IsNullOrWhiteSpace(val)) throw new SettingsPropertyNotFoundException("app setting " + key + " is not set");
@@ -71,7 +71,7 @@ namespace Servo
         {
             get
             {
-                const string key = "WinSvc/Conf/ServicesDependedOn";
+                const string key = "Servo/Conf/ServicesDependedOn";
 
                 var val = ReadConf(key);
                 if (string.IsNullOrWhiteSpace(val)) return new string[] { };
@@ -83,7 +83,7 @@ namespace Servo
         {
             get
             {
-                const string key = "WinSvc/Conf/DelayedAutoStart";
+                const string key = "Servo/Conf/DelayedAutoStart";
 
                 var val = ReadConf(key);
                 if (string.IsNullOrWhiteSpace(val)) throw new SettingsPropertyNotFoundException("app setting " + key + " is not set");
@@ -94,11 +94,26 @@ namespace Servo
                 return auto;
             }
         }
+        public bool RunInService
+        {
+            get
+            {
+                const string key = "Servo/Conf/RunInService";
+
+                var val = ReadConf(key);
+                if (string.IsNullOrWhiteSpace(val)) throw new SettingsPropertyNotFoundException("app setting " + key + " is not set");
+
+                bool runInService;
+                if (!bool.TryParse(val, out runInService)) throw new SettingsPropertyNotFoundException("app setting " + key + " has a wrong value"); ;
+
+                return runInService;
+            }
+        }
 
         public override string ToString()
         {
             var depended = string.Join(", ", ServicesDependedOn);
-            return new { ServiceName, DisplayName, ServiceStartMode, Description, ServicesDependedOn = depended, DelayedAutoStart }.ToString();
+            return new { ServiceName, DisplayName, ServiceStartMode, Description, ServicesDependedOn = depended, DelayedAutoStart, RunInService }.ToString();
         }
 
         static string ReadConf(string key)
@@ -305,7 +320,7 @@ namespace Servo
             this.Name = "MainForm";
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "WinSvc App";
+            this.Text = "Servo App";
             this.ResumeLayout(false);
         }
 
@@ -411,153 +426,31 @@ namespace Servo
     }
     #endregion
 
-    #region CommandLineArgs
-    class CommandLineArgs
-    {
-        const string ArgTemplate = "(?<parameter>(?<prefix>^-{1,2}|^/)(?<switch>[^=:]+)(?<splitter>[=:]{0,1})(?<value>.*$))|(?<argument>.*)";
-        readonly List<Arg> _args;
-
-        public CommandLineArgs() { _args = Parser(Environment.GetCommandLineArgs()); }
-        public CommandLineArgs(string[] args) { _args = Parser(args); }
-
-        public string this[string @switch]
-        {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(@switch)) throw new ArgumentNullException("@switch");
-
-                var @param = (from a in _args where a.IsParameter && string.Compare(a.Switch, @switch, true) == 0 select a).FirstOrDefault();
-                if (@param != null)
-                {
-                    if (!string.IsNullOrWhiteSpace(@param.Value) || !string.IsNullOrWhiteSpace(@param.Splitter)) return @param.Value;
-                    return @param.Switch;
-                }
-
-                @param = (from a in _args where !a.IsParameter && string.Compare(a.Value, @switch, true) == 0 select a).FirstOrDefault();
-                if (@param != null) return @param.Value;
-
-                return null;
-            }
-        }
-        public string[] this[string @switch, int maxNumberOfArguments]
-        {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(@switch)) throw new ArgumentNullException("@switch");
-
-                maxNumberOfArguments = maxNumberOfArguments == -1 ? int.MaxValue - 1 : maxNumberOfArguments;
-
-                Arg @param = null;
-                var args = new List<Arg>();
-
-                var part1 = _args.SkipWhile(p => string.Compare(p.Switch, @switch, true) != 0).ToList();
-                @param = part1.Take(1).FirstOrDefault();
-                if (@param != null)
-                {
-                    args = part1.Skip(1).TakeWhile(a => !a.IsParameter).ToList();
-                    args = args.Take(maxNumberOfArguments).ToList();
-                }
-
-                return @param != null ? (from a in args select a.Value).ToArray() : null;
-            }
-        }
-
-        static List<Arg> Parser(string[] args)
-        {
-            if (args == null || args.Length == 0) return new List<Arg>();
-
-            Func<Capture, string> getVal = c => { return c == null ? null : c.Value; };
-
-            var result = new List<Arg>();
-
-            foreach (var a in args)
-            {
-                var m = Regex.Match(a, ArgTemplate);
-                if (m.Groups["parameter"] != null && m.Groups["parameter"].Success)
-                {
-                    result.Add(new Arg(
-                        getVal(m.Groups["prefix"]),
-                        getVal(m.Groups["switch"]),
-                        getVal(m.Groups["splitter"]),
-                        getVal(m.Groups["value"])));
-                }
-                else
-                {
-                    result.Add(new Arg(getVal(m.Groups["argument"])));
-                }
-            }
-
-            return result;
-        }
-
-        class Arg
-        {
-            /// <summary>
-            /// is a parameter or an argument
-            /// </summary>
-            public bool IsParameter { get; private set; }
-            public string Prefix { get; private set; }
-            public string Switch { get; private set; }
-            public string Splitter { get; private set; }
-            public string Value { get; private set; }
-
-            private Arg() { }
-            public Arg(
-                string prefix,
-                string switch_,
-                string splitter,
-                string val)
-            {
-                Prefix = prefix;
-                Switch = switch_;
-                Splitter = splitter;
-                Value = val;
-                IsParameter = true;
-            }
-            public Arg(
-                string val)
-            {
-                Value = val;
-                IsParameter = false;
-            }
-
-            public override string ToString()
-            {
-                return IsParameter ?
-                    string.Format("{0}{1}{2}{3}",
-                        Prefix ?? string.Empty,
-                        Switch ?? string.Empty,
-                        Splitter ?? string.Empty,
-                        Value ?? string.Empty) :
-                    string.Format("{0}", Value ?? string.Empty);
-            }
-        }
-    }
-    #endregion
-
     #region Extensions
     static class Extensions
     {
-        public static void Run(this IService svc, bool runInService = false)
+        public static void Run(this IService svc)
         {
-            var flags = new CommandLineArgs();
+            var conf = new Config();
+            var flags = Environment.GetCommandLineArgs();
+            var f = flags.Length > 1 ? flags[1].ToLower() : string.Empty;
 
-            if (flags["h"].IsSupplied() || flags["help"].IsSupplied())
+            if (f == "-h" || f == "-help")
             {
                 ShowHelp();
 
                 return;
             }
 
-            if (runInService)
+            if (conf.RunInService)
             {
                 var args = Environment.GetCommandLineArgs();
 
-                if (flags["i"].IsSupplied() || flags["install"].IsSupplied()) SvcInstaller.Install(false, args);
-                else if (flags["u"].IsSupplied() || flags["uninstall"].IsSupplied()) SvcInstaller.Install(true, args);
-                else if (flags["start"].IsSupplied()) new SvcController().Start();
-                else if (flags["stop"].IsSupplied()) new SvcController().Stop();
-                else if (flags["a"].IsSupplied() || flags["app"].IsSupplied()) new InApp(svc).Run();
+                if (f == "-i" || f == "-install") SvcInstaller.Install(false, args);
+                else if (f == "-u" || f == "-uninstall") SvcInstaller.Install(true, args);
+                else if (f == "-start") new SvcController().Start();
+                else if (f == "-stop") new SvcController().Stop();
+                else if (f == "-a" || f == "-app") new InApp(svc).Run();
                 else new InService(svc).Run();
             }
             else
@@ -575,8 +468,6 @@ namespace Servo
             Console.WriteLine("-stop                stops this windows service");
             Console.WriteLine("-a or -app           runs this windows service as an app");
         }
-
-        internal static bool IsSupplied(this string arg) { return !string.IsNullOrWhiteSpace(arg); }
     }
     #endregion
 }

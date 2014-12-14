@@ -55,7 +55,7 @@
   <ItemGroup>
     <Compile Include="App.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Service.cs" />
+    <Compile Include="SampleService.cs" />
     <Compile Include="Servo.cs">
       <SubType>Component</SubType>
     </Compile>

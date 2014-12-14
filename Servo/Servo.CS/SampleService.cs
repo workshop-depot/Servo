@@ -4,7 +4,7 @@ using System;
 
 namespace XService
 {
-    class XServiceService : IService
+    class SampleService : IService
     {
         #region IService Members
         public void OnContinue()

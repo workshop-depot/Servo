@@ -4,7 +4,7 @@ open NLog
 open Servo
 open System
 
-type XServiceService() =
+type SampleService() =
     static let ClassLogger = LogManager.GetCurrentClassLogger()
 
     interface IService with

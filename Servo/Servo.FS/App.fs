@@ -3,6 +3,6 @@ open Servo.Toolbox
 
 [<EntryPoint>]
 let main argv = 
-    (new XServiceService()).Run(true)
+    (new SampleService()).Run()
      
     0 

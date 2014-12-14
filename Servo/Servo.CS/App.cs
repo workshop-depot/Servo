@@ -6,7 +6,7 @@ namespace XService
     {
         static void Main(string[] args)
         {
-            new XServiceService().Run();
+            new SampleService().Run();
         }
     }
 }

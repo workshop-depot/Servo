@@ -64,6 +64,15 @@ type Config() =
                                               
                                               mode
 
+    member this.RunInService with get() = let key = "Servo/Conf/RunInService"
+                                          let v = readConf key
+                                          if String.IsNullOrWhiteSpace(v) then raise <| SettingsPropertyNotFoundException("app setting " + key + " is not set")
+
+                                          let ok, runInService = Boolean.TryParse(v)
+                                          if not ok then raise <| SettingsPropertyNotFoundException("app setting " + key + " has a wrong value")
+                                          
+                                          runInService
+
     override this.ToString() =
         let depended = String.Join(", ", this.ServicesDependedOn)
         (("ServiceName", this.ServiceName),
@@ -71,7 +80,8 @@ type Config() =
          ("ServiceStartMode", this.ServiceStartMode),
          ("Description", this.Description),
          ("ServicesDependedOn", depended),
-         ("DelayedAutoStart", this.DelayedAutoStart)).ToString()
+         ("DelayedAutoStart", this.DelayedAutoStart),
+         ("RunInService", this.RunInService)).ToString()
 
 type IService = 
     abstract member OnContinue      : unit -> unit
@@ -295,11 +305,12 @@ module Toolbox =
         Console.WriteLine("-a or -app           runs this windows service as an app")
 
     type IService with
-        member this.Run (runInService : bool) =
+        member this.Run () =
+            let conf = new Config()
             let argv = Environment.GetCommandLineArgs()
             let argl = argv |> Seq.map (fun x -> x.ToLower()) |> Seq.skip 1 |> List.ofSeq
             
-            if runInService then
+            if (conf.RunInService) then
                 match argl with
                 | ["-h"] | ["-help"] -> ShowHelp()
                 | ["-i"] | ["-install"] -> SvcInstaller.Install false argv
