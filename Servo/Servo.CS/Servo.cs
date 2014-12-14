@@ -395,34 +395,13 @@ namespace Servo
             try
             {
                 Console.WriteLine(undo ? "uninstalling" : "installing");
-                using (var assinst = new AssemblyInstaller(typeof(SvcInstaller).Assembly, args))
-                {
-                    IDictionary state = new Hashtable();
-                    assinst.UseNewContext = true;
 
-                    try
-                    {
-                        if (undo)
-                        {
-                            assinst.Uninstall(state);
-                        }
-                        else
-                        {
-                            assinst.Install(state);
-                            assinst.Commit(state);
-                        }
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            assinst.Rollback(state);
-                        }
-                        catch { }
+                if (undo)
+                    ManagedInstallerClass.InstallHelper(new string[] { "/u", System.Reflection.Assembly.GetAssembly(typeof(SvcInstaller)).Location });
+                else
+                    ManagedInstallerClass.InstallHelper(new string[] { System.Reflection.Assembly.GetAssembly(typeof(SvcInstaller)).Location });
 
-                        throw;
-                    }
-                }
+
             }
             catch (Exception ex) { ClassLogger.Error(ex); }
         }

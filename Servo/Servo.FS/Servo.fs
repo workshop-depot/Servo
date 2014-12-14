@@ -1,4 +1,4 @@
-﻿module Servo
+﻿namespace Servo
 
 open NLog
 open System
@@ -13,12 +13,15 @@ open System.Text.RegularExpressions
 open System.Threading.Tasks
 open System.Windows.Forms
 
-let readConf (key: string) = ConfigurationManager.AppSettings.[key]
+module Helpers =
+    let readConf (key: string) = ConfigurationManager.AppSettings.[key]
 
-let asEnum s :'a option when 'a:enum<'b> =
-    match System.Enum.TryParse s with
-    | true, v -> Some v
-    | _ -> None
+    let asEnum s :'a option when 'a:enum<'b> =
+        match System.Enum.TryParse s with
+        | true, v -> Some v
+        | _ -> None
+
+open Helpers
 
 type Config() =
     member this.ServiceName with get() = let key = "WinSvc/Conf/ServiceName"
@@ -145,7 +148,6 @@ type InService(scaffold: IService) =
             base.OnStop()
 
     member this.Run() = 
-        ClassLogger.Info("InService")
         ServiceBase.Run(this)
 
 type MainForm(svc: IService) as thisObj =
@@ -248,8 +250,6 @@ type public SvcInstaller() as thisObj =
     static let ClassLogger = LogManager.GetCurrentClassLogger()
 
     do
-        ClassLogger.Info("SvcInstaller 1")
-
         let processInstaller = new ServiceProcessInstaller()
         let serviceInstaller = new ServiceInstaller()
 
@@ -260,7 +260,6 @@ type public SvcInstaller() as thisObj =
         serviceInstaller.DisplayName <- conf.DisplayName    
         serviceInstaller.StartType   <- conf.ServiceStartMode 
         serviceInstaller.Description <- conf.Description
-        ClassLogger.Info(conf.ToString())
 
         try
             serviceInstaller.ServicesDependedOn <- conf.ServicesDependedOn
@@ -274,8 +273,6 @@ type public SvcInstaller() as thisObj =
 
         thisObj.Installers.Add(serviceInstaller) |> ignore
         thisObj.Installers.Add(processInstaller) |> ignore
-
-        ClassLogger.Info("SvcInstaller 2")
         
     static member Install (undo: bool) (args: String[]) = 
         try
@@ -285,40 +282,18 @@ type public SvcInstaller() as thisObj =
                 ManagedInstallerClass.InstallHelper([| "/u"; System.Reflection.Assembly.GetAssembly(typeof<SvcInstaller>).Location |])
             else
                 ManagedInstallerClass.InstallHelper([| System.Reflection.Assembly.GetAssembly(typeof<SvcInstaller>).Location |])
-            (*
-            use assinst = new AssemblyInstaller(System.Reflection.Assembly.GetAssembly(typeof<SvcInstaller>), args)
-            let state = new Hashtable() 
-            assinst.UseNewContext <- true
-
-            try
-                if undo then
-                    assinst.Uninstall(state)
-                    ClassLogger.Info("uninstalled")
-                else
-                    assinst.Install(state) 
-                    assinst.Commit(state)  
-                    ClassLogger.Info("installed")
-            with _ ->
-                try
-                    assinst.Rollback(state)
-                    ClassLogger.Info("rolled back")
-                with xo ->
-                    ClassLogger.Error(xo)
-
-                reraise()
-            *)
         with ex ->
             ClassLogger.Error(ex)
 
-let ShowHelp() =
-    Console.WriteLine("-h or -help          shows this help")
-    Console.WriteLine("-i or -install       installs this windows service")
-    Console.WriteLine("-u or -uninstall     uninstalls this windows service")
-    Console.WriteLine("-start               starts this windows service")
-    Console.WriteLine("-stop                stops this windows service")
-    Console.WriteLine("-a or -app           runs this windows service as an app")
-
 module Toolbox =
+    let ShowHelp() =
+        Console.WriteLine("-h or -help          shows this help")
+        Console.WriteLine("-i or -install       installs this windows service")
+        Console.WriteLine("-u or -uninstall     uninstalls this windows service")
+        Console.WriteLine("-start               starts this windows service")
+        Console.WriteLine("-stop                stops this windows service")
+        Console.WriteLine("-a or -app           runs this windows service as an app")
+
     type IService with
         member this.Run (runInService : bool) =
             let argv = Environment.GetCommandLineArgs()
