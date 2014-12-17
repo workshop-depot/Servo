@@ -7,6 +7,7 @@ using System.Configuration;
 using System.Configuration.Install;
 using System.Linq;
 using System.ServiceProcess;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -433,21 +434,19 @@ namespace Servo
         {
             var conf = new Config();
             var flags = Environment.GetCommandLineArgs();
-            var f = flags.Length > 1 ? flags[1].ToLower() : string.Empty;
+            var f = flags.Skip(1).FirstOrDefault() ?? string.Empty;
 
             if (f == "-h" || f == "-help")
             {
-                ShowHelp();
+                ShowHelp(conf.RunInService);
 
                 return;
             }
 
             if (conf.RunInService)
             {
-                var args = Environment.GetCommandLineArgs();
-
-                if (f == "-i" || f == "-install") SvcInstaller.Install(false, args);
-                else if (f == "-u" || f == "-uninstall") SvcInstaller.Install(true, args);
+                if (f == "-i" || f == "-install") SvcInstaller.Install(false, flags);
+                else if (f == "-u" || f == "-uninstall") SvcInstaller.Install(true, flags);
                 else if (f == "-start") new SvcController().Start();
                 else if (f == "-stop") new SvcController().Stop();
                 else if (f == "-a" || f == "-app") new InApp(svc).Run();
@@ -459,14 +458,19 @@ namespace Servo
             }
         }
 
-        static void ShowHelp()
+        static void ShowHelp(bool runInService)
         {
-            Console.WriteLine("-h or -help          shows this help");
-            Console.WriteLine("-i or -install       installs this windows service");
-            Console.WriteLine("-u or -uninstall     uninstalls this windows service");
-            Console.WriteLine("-start               starts this windows service");
-            Console.WriteLine("-stop                stops this windows service");
-            Console.WriteLine("-a or -app           runs this windows service as an app");
+            var h = new StringBuilder();
+            if (!runInService) h = h.AppendLine("<< IS NOT RUNNING IN SERVICE MODE >>\r\nChange value of Servo/Conf/RunInService in App.config to true.\r\n");
+            h = h
+                .AppendLine("-h or -help\tshows this help")
+                .AppendLine("-i or -install\tinstalls this windows service")
+                .AppendLine("-u or -uninstall\tuninstalls this windows service")
+                .AppendLine("-start\t\tstarts this windows service")
+                .AppendLine("-stop\t\tstops this windows service")
+                .AppendLine("-a or -app\t\truns this windows service as an app");
+
+            MessageBox.Show(h.ToString(), "XService");
         }
     }
     #endregion

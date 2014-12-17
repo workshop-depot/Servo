@@ -3,6 +3,20 @@ Servo
 
 A Project Template for developing Windows Service easily.
 
+For developing a Windows Service:
+
+- Implement `IService` like `SampleService`.
+
+This service will run in `Main` method just using this code: `new SampleService().Run();`.
+
+After you are done with development of your service, just set `Servo/Conf/RunInService` in `App.config` to `true`. After that, in the command line, pass `-i` to install the service.
+
+You can also set things like service name and description in `App.config`.
+
+## V 0.8
+
+Help for command line shows a dialog now.
+
 ## V 0.7
 
 RunInService is now in App.config so it can be easily changed if one forgot to set it to true even after deployment; so there is no difference between development assemblies and deployment assemblies other than the flag in App.config.

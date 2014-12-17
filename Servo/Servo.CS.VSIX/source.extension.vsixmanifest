@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="Servo.CS.VSIX..3e549c60-fff1-4079-a71e-165e9ed11aa3" Version="0.7" Language="en-US" Publisher="dc0d@outlook.com" />
+    <Identity Id="Servo.CS.VSIX..3e549c60-fff1-4079-a71e-165e9ed11aa3" Version="0.8" Language="en-US" Publisher="dc0d@outlook.com" />
     <DisplayName>Servo.CS.VSIX</DisplayName>
     <Description xml:space="preserve">A Project Template for developing Windows Service easily;</Description>
     <MoreInfo>https://github.com/dc0d/Servo</MoreInfo>

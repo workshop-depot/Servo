@@ -9,6 +9,7 @@ open System.Configuration
 open System.Configuration.Install
 open System.Linq
 open System.ServiceProcess
+open System.Text
 open System.Text.RegularExpressions
 open System.Threading.Tasks
 open System.Windows.Forms
@@ -296,28 +297,35 @@ type public SvcInstaller() as thisObj =
             ClassLogger.Error(ex)
 
 module Toolbox =
-    let ShowHelp() =
-        Console.WriteLine("-h or -help          shows this help")
-        Console.WriteLine("-i or -install       installs this windows service")
-        Console.WriteLine("-u or -uninstall     uninstalls this windows service")
-        Console.WriteLine("-start               starts this windows service")
-        Console.WriteLine("-stop                stops this windows service")
-        Console.WriteLine("-a or -app           runs this windows service as an app")
+    let ShowHelp(runInService : bool) =
+        let mutable h = StringBuilder()
+        if (not runInService) then h <- h.AppendLine("<< IS NOT RUNNING IN SERVICE MODE >>\r\nChange value of Servo/Conf/RunInService in App.config to true.\r\n")
+        h <- h
+            .AppendLine("-h or -help\tshows this help")
+            .AppendLine("-i or -install\tinstalls this windows service")
+            .AppendLine("-u or -uninstall\tuninstalls this windows service")
+            .AppendLine("-start\t\tstarts this windows service")
+            .AppendLine("-stop\t\tstops this windows service")
+            .AppendLine("-a or -app\t\truns this windows service as an app")
+
+        MessageBox.Show(h.ToString(), "XService") |> ignore
 
     type IService with
         member this.Run () =
             let conf = new Config()
-            let argv = Environment.GetCommandLineArgs()
-            let argl = argv |> Seq.map (fun x -> x.ToLower()) |> Seq.skip 1 |> List.ofSeq
-            
-            if (conf.RunInService) then
-                match argl with
-                | ["-h"] | ["-help"] -> ShowHelp()
-                | ["-i"] | ["-install"] -> SvcInstaller.Install false argv
-                | ["-u"] | ["-uninstall"] -> SvcInstaller.Install true argv
-                | ["-start"] -> (new SvcController()).Start()
-                | ["-stop"] -> (new SvcController()).Stop()
-                | ["-a"] | ["-app"] -> (new InApp(this)).Run()
+            let flags = Environment.GetCommandLineArgs()
+            let mutable f = flags.Skip(1).FirstOrDefault()
+            if String.IsNullOrWhiteSpace(f) then f <- String.Empty
+
+            match conf.RunInService, f with
+            | _, "-h" | _, "-help" -> ShowHelp(conf.RunInService)
+            | true, _ ->
+                match f with
+                | "-i" | "-install" -> SvcInstaller.Install false flags
+                | "-u" | "-uninstall" -> SvcInstaller.Install true flags
+                | "-start" -> (new SvcController()).Start()
+                | "-stop" -> (new SvcController()).Stop()
+                | "-a" | "-app" -> (new InApp(this)).Run()
                 | _ -> (new InService(this)).Run()
-            else 
-                (new InApp(this)).Run()
+            | _ -> (new InApp(this)).Run()
+                
