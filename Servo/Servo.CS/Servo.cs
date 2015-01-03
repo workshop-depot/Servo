@@ -264,6 +264,7 @@ namespace Servo
 
         async Task Stop()
         {
+            stopBtn.Enabled = false;
             await Task.Factory.StartNew(() => _svc.OnStop(), TaskCreationOptions.LongRunning);
             this.Close();
         }

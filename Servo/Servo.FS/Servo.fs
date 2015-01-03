@@ -177,6 +177,7 @@ type MainForm(svc: IService) as thisObj =
         stopBtn.Enabled <- true
 
     member this.Stop() =
+        stopBtn.Enabled <- false
         Task.Factory.StartNew(fun () -> svc.OnStop(), TaskCreationOptions.LongRunning).Wait()
         this.Close()
 
