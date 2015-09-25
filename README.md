@@ -1,7 +1,7 @@
 Servo
 =====
 
-A Project Template for developing Windows Service easily.
+A Project Template for developing Windows Service easily (Available on [Visual Studio Gallery](https://visualstudiogallery.msdn.microsoft.com/3014ea0a-7959-4e04-8681-f68feeee9ef7)).
 
 For developing a Windows Service:
 
