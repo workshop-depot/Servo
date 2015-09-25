@@ -13,6 +13,10 @@ After you are done with development of your service, just set `Servo/Conf/RunInS
 
 You can also set things like service name and description in `App.config`.
 
+## V 0.9
+
+Some settings added and project structure changed; keeping in mind to not breaking things as much as possible.
+
 ## V 0.8
 
 Help for command line shows a dialog now.
